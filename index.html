@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a1628">
+    <title>Hovercraft's ATR 72 Tools</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #0a1628 0%, #1a2d4a 100%);
+            color: #fff;
+            padding: 16px 20px 0;
+            padding-top: calc(16px + env(safe-area-inset-top));
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+        .header h1 span { font-weight: 300; opacity: 0.7; }
+
+        /* ── Tab Bar ── */
+        .tabs {
+            display: flex;
+            gap: 0;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: rgba(255,255,255,0.5);
+            transition: all 0.2s;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .tab.active {
+            color: #fff;
+            border-bottom-color: #4da6ff;
+        }
+
+        /* ── Content ── */
+        .content { padding: 16px; max-width: 500px; margin: 0 auto; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* ── Card ── */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8899aa;
+            margin-bottom: 16px;
+        }
+
+        /* ── Inputs ── */
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #667;
+            margin: 14px 0 5px;
+            letter-spacing: 0.3px;
+        }
+        label:first-child { margin-top: 0; }
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e4ea;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            background: #fff;
+            color: #222;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        select { background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23667' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 14px center; padding-right: 36px; }
+        input:focus, select:focus { border-color: #4da6ff; outline: none; background: #f8fbff; }
+        input::placeholder { color: #bbb; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* ── Results ── */
+        .result-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+        .result-box {
+            background: #f7f8fa;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #eaedf1;
+        }
+        .result-box.fwd { border-left: 4px solid #2b7de9; }
+        .result-box.aft { border-left: 4px solid #7c8a9a; }
+        .result-label { font-size: 0.7rem; font-weight: 700; color: #8899aa; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .result-val { font-size: 1.3rem; font-weight: 800; color: #1a2d4a; }
+        .result-sub { font-size: 0.85rem; color: #5a7; margin-top: 2px; }
+        .result-sub.fwd-col { color: #2b7de9; }
+        .result-sub.aft-col { color: #667; }
+
+        .avg-display {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #99a;
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        .divider { border: 0; border-top: 1px solid #eee; margin: 18px 0; }
+
+        /* ── Status pill ── */
+        .status-pill {
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 0.95rem;
+            margin-top: 16px;
+            border: 2px solid transparent;
+        }
+        .status-pass { background: #e6f4ea; color: #1e7e34; border-color: #c3e6cb; }
+        .status-fail { background: #fde8e8; color: #c0392b; border-color: #f5c6cb; }
+
+        /* ── Buttons ── */
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 16px;
+            letter-spacing: 0.3px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .btn-danger { background: #dc3545; color: #fff; }
+        .btn-secondary { background: #6c757d; color: #fff; }
+        .btn-danger:active { background: #c82333; }
+        .btn-secondary:active { background: #5a6268; }
+
+        /* ── Runway quick-select ── */
+        .rwy-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        .rwy-btn {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 2px solid #2b7de9;
+            background: #fff;
+            color: #2b7de9;
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .rwy-btn.active { background: #2b7de9; color: #fff; }
+        .rwy-btn:active { opacity: 0.7; }
+        .rwy-btn.edit-btn { border-color: #8899aa; color: #8899aa; font-size: 0.75rem; padding: 10px 12px; }
+        .rwy-btn.edit-btn.active { background: #8899aa; color: #fff; }
+
+        /* ── Runway editor ── */
+        .rwy-editor {
+            background: #f7f8fa;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .rwy-editor.open { display: block; }
+        .rwy-editor-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .rwy-editor-row input {
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+        .rwy-editor-row input.rwy-name { flex: 2; }
+        .rwy-editor-row input.rwy-hdg { flex: 1; }
+        .rwy-del-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            background: #dc3545;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .rwy-add-btn {
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px dashed #ccc;
+            background: transparent;
+            color: #888;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* ── ATR 72 profile artwork ── */
+        .atr-profile {
+            padding: 12px 8px 4px;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .atr-profile svg { width: 100%; max-width: 420px; height: auto; }
+
+        /* ── Wind diagram ── */
+        .diagram-wrap {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        canvas#windDiagram {
+            width: 260px;
+            height: 260px;
+            border-radius: 12px;
+            background: #f7f8fa;
+            border: 1px solid #eaedf1;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Header + Tabs ── -->
+<div class="header">
+    <h1>Hovercraft's <span>ATR 72-600 Flight Tools</span></h1>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('bags')">Bags</div>
+        <div class="tab" onclick="switchTab('wind')">Wind</div>
+    </div>
+</div>
+
+<div class="content">
+
+<!-- ════════════════════════════════════════════ -->
+<!-- TAB 1: BAGGAGE SPLITTER                     -->
+<!-- ════════════════════════════════════════════ -->
+<div id="panelBags" class="panel active">
+
+    <!-- ATR 72 side-profile with cargo holds -->
+    <div class="card" style="padding: 10px 12px 8px;">
+        <div class="atr-profile">
+            <svg viewBox="0 0 480 155" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#dae8f5"/>
+                        <stop offset="100%" stop-color="#edf2f8"/>
+                    </linearGradient>
+                    <linearGradient id="fuse" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#f8f9fc"/>
+                        <stop offset="35%" stop-color="#eef1f5"/>
+                        <stop offset="100%" stop-color="#d4dae4"/>
+                    </linearGradient>
+                    <linearGradient id="belly" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#d4dae4"/>
+                        <stop offset="100%" stop-color="#c0c8d4"/>
+                    </linearGradient>
+                    <linearGradient id="nacelle" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#c8cdd6"/>
+                        <stop offset="50%" stop-color="#dde1e8"/>
+                        <stop offset="100%" stop-color="#c0c6d0"/>
+                    </linearGradient>
+                </defs>
+                <rect x="0" y="0" width="480" height="155" rx="8" fill="url(#sky)"/>
+
+                <!-- ═══════════════════════════════════════
+                     FUSELAGE — tubby rounded ATR shape
+                     Nose droops down, rear tapers to tail
+                     ═══════════════════════════════════════ -->
+
+                <!-- Upper fuselage (white/light) -->
+                <path d="M62,56 Q50,52 42,54 Q32,57 26,64 Q22,70 24,74
+                         L62,74 L390,74 Q408,74 418,70 Q428,64 432,56
+                         L390,56 Z"
+                      fill="url(#fuse)" stroke="none"/>
+                <!-- Lower fuselage / belly (darker grey) -->
+                <path d="M24,74 Q22,80 28,86 Q34,90 50,90 L62,90
+                         L370,90 Q388,90 400,86 Q412,80 418,70 L390,74
+                         L62,74 Z"
+                      fill="url(#belly)" stroke="none"/>
+                <!-- Full fuselage outline -->
+                <path d="M42,54 Q32,57 26,64 Q22,70 24,74 Q22,80 28,86
+                         Q34,90 50,90 L370,90 Q388,90 400,86 Q412,80 418,70
+                         Q428,64 432,56 L390,56 L62,56 Q50,52 42,54 Z"
+                      fill="none" stroke="#8899aa" stroke-width="1.2" stroke-linejoin="round"/>
+
+                <!-- Nose radome (rounded, droops below fuselage line) -->
+                <path d="M42,54 Q32,57 26,64 Q22,70 24,74"
+                      fill="none" stroke="#8899aa" stroke-width="1.4" stroke-linecap="round"/>
+                <!-- Radome darker tip -->
+                <path d="M30,58 Q24,64 23,72" fill="none" stroke="#99a5b4" stroke-width="2.5" stroke-linecap="round" opacity="0.3"/>
+
+                <!-- Cockpit windows (ATR 72 has 2 large wraparound windshields) -->
+                <path d="M36,60 L46,57 L54,57" fill="none" stroke="#4a90d9" stroke-width="2" stroke-linecap="round"/>
+                <path d="M32,65 L42,60.5 L50,59" fill="none" stroke="#4a90d9" stroke-width="1.5" stroke-linecap="round"/>
+
+                <!-- Passenger window line -->
+                <g stroke="#9ab" stroke-width="0.7" opacity="0.8">
+                    <line x1="72" y1="60" x2="74" y2="60"/>
+                    <line x1="80" y1="60" x2="82" y2="60"/>
+                    <line x1="88" y1="60" x2="90" y2="60"/>
+                    <line x1="96" y1="60" x2="98" y2="60"/>
+                    <line x1="104" y1="60" x2="106" y2="60"/>
+                    <line x1="112" y1="60" x2="114" y2="60"/>
+                    <line x1="120" y1="60" x2="122" y2="60"/>
+                    <line x1="128" y1="60" x2="130" y2="60"/>
+                    <line x1="136" y1="60" x2="138" y2="60"/>
+                    <line x1="148" y1="60" x2="150" y2="60"/>
+                    <line x1="156" y1="60" x2="158" y2="60"/>
+                    <line x1="164" y1="60" x2="166" y2="60"/>
+                    <line x1="172" y1="60" x2="174" y2="60"/>
+                    <line x1="180" y1="60" x2="182" y2="60"/>
+                    <line x1="188" y1="60" x2="190" y2="60"/>
+                    <line x1="208" y1="60" x2="210" y2="60"/>
+                    <line x1="216" y1="60" x2="218" y2="60"/>
+                    <line x1="224" y1="60" x2="226" y2="60"/>
+                    <line x1="232" y1="60" x2="234" y2="60"/>
+                    <line x1="240" y1="60" x2="242" y2="60"/>
+                    <line x1="248" y1="60" x2="250" y2="60"/>
+                    <line x1="256" y1="60" x2="258" y2="60"/>
+                    <line x1="264" y1="60" x2="266" y2="60"/>
+                    <line x1="272" y1="60" x2="274" y2="60"/>
+                    <line x1="280" y1="60" x2="282" y2="60"/>
+                    <line x1="288" y1="60" x2="290" y2="60"/>
+                    <line x1="296" y1="60" x2="298" y2="60"/>
+                    <line x1="304" y1="60" x2="306" y2="60"/>
+                    <line x1="312" y1="60" x2="314" y2="60"/>
+                    <line x1="320" y1="60" x2="322" y2="60"/>
+                    <line x1="328" y1="60" x2="330" y2="60"/>
+                    <line x1="336" y1="60" x2="338" y2="60"/>
+                    <line x1="344" y1="60" x2="346" y2="60"/>
+                    <line x1="352" y1="60" x2="354" y2="60"/>
+                    <line x1="360" y1="60" x2="362" y2="60"/>
+                    <line x1="368" y1="60" x2="370" y2="60"/>
+                </g>
+
+                <!-- Blue cheatline stripe along fuselage -->
+                <path d="M30,70 Q40,67 62,66 L390,66 Q408,66 420,63"
+                      fill="none" stroke="#1a5276" stroke-width="2" stroke-linecap="round"/>
+                <path d="M28,73 Q38,70.5 62,69.5 L390,69.5 Q408,69.5 420,66"
+                      fill="none" stroke="#2b7de9" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+
+                <!-- ═══════════════════════════════════════
+                     HIGH WING — thick, straight, sits ON TOP
+                     ATR 72 wing is mounted above the cabin
+                     In side view: visible as a thick airfoil
+                     on top of the fuselage
+                     ═══════════════════════════════════════ -->
+
+                <!-- Wing fairing / root (thick bump on top of fuselage) -->
+                <path d="M155,56 Q155,46 170,44 L260,44 Q275,46 275,56"
+                      fill="#e0e5ed" stroke="#8899aa" stroke-width="1"/>
+                <!-- Wing cross-section profile (airfoil visible above fuselage) -->
+                <path d="M148,56 Q145,50 150,46 Q155,42 175,40 L255,40
+                         Q275,42 280,46 Q285,50 282,56 Z"
+                      fill="#d8dfe9" stroke="#8899aa" stroke-width="0.8"/>
+                <!-- Wing leading-edge highlight -->
+                <path d="M150,48 Q158,42 180,40 L250,40 Q272,42 280,48"
+                      fill="none" stroke="#f0f2f5" stroke-width="1" opacity="0.6"/>
+
+                <!-- ═══════════════════════════════════════
+                     ENGINE NACELLE — large, hangs below wing
+                     PW127M turboprop with 6-blade prop
+                     ═══════════════════════════════════════ -->
+
+                <!-- Nacelle pylon (connects wing to nacelle) -->
+                <rect x="193" y="48" width="6" height="14" rx="1"
+                      fill="#c8cdd6" stroke="#8899aa" stroke-width="0.6"/>
+
+                <!-- Nacelle body -->
+                <path d="M172,60 Q168,56 170,52 Q172,48 180,48 L210,48
+                         Q218,48 220,52 Q222,56 218,60 Z"
+                      fill="url(#nacelle)" stroke="#8899aa" stroke-width="1"/>
+                <!-- Exhaust / jet pipe at rear of nacelle -->
+                <path d="M218,52 Q224,54 224,56 Q224,58 218,60"
+                      fill="#a0a8b4" stroke="#8899aa" stroke-width="0.6"/>
+
+                <!-- Propeller disc (large! 3.93m — about 14% of fuselage length) -->
+                <ellipse cx="172" cy="55" rx="2.5" ry="22"
+                         fill="none" stroke="#667788" stroke-width="1.2" opacity="0.35"/>
+                <!-- Spinner / hub -->
+                <ellipse cx="170" cy="55" rx="4" ry="5"
+                         fill="#b0b8c4" stroke="#8899aa" stroke-width="0.8"/>
+                <!-- Individual prop blade hints (6 blades) -->
+                <g stroke="#8899aa" stroke-width="1.2" opacity="0.25" stroke-linecap="round">
+                    <line x1="171" y1="55" x2="173" y2="33"/>
+                    <line x1="171" y1="55" x2="174" y2="36"/>
+                    <line x1="171" y1="55" x2="173" y2="77"/>
+                    <line x1="171" y1="55" x2="174" y2="74"/>
+                    <line x1="171" y1="55" x2="168" y2="34"/>
+                    <line x1="171" y1="55" x2="168" y2="76"/>
+                </g>
+
+                <!-- ═══════════════════════════════════════
+                     T-TAIL — tall vertical fin, horizontal
+                     stabiliser mounted at the very top
+                     ═══════════════════════════════════════ -->
+
+                <!-- Dorsal fin (small fairing where tail meets fuselage) -->
+                <path d="M375,56 L385,46 L400,46 L395,56 Z"
+                      fill="#dde1e8" stroke="#8899aa" stroke-width="0.6"/>
+
+                <!-- Vertical stabiliser -->
+                <path d="M388,46 L396,12 Q398,6 404,5 L414,5
+                         Q418,5 418,10 L412,46 Z"
+                      fill="#d8dfe9" stroke="#8899aa" stroke-width="1"/>
+                <!-- Rudder hinge line -->
+                <line x1="406" y1="10" x2="410" y2="46" stroke="#8899aa" stroke-width="0.5" stroke-dasharray="2,2"/>
+
+                <!-- Horizontal stabiliser (T-tail, at the top) -->
+                <path d="M392,12 L380,7 Q376,5 374,7 L376,12 Z"
+                      fill="#d0d8e4" stroke="#8899aa" stroke-width="0.8"/>
+                <path d="M412,10 L434,5 Q438,3 440,5 L436,12 L418,10 Z"
+                      fill="#d0d8e4" stroke="#8899aa" stroke-width="0.8"/>
+
+                <!-- ═══════════════════════════════════════
+                     LANDING GEAR
+                     ═══════════════════════════════════════ -->
+
+                <!-- Nose gear -->
+                <line x1="76" y1="90" x2="76" y2="104" stroke="#667" stroke-width="1.5"/>
+                <ellipse cx="76" cy="106" rx="5" ry="3.5" fill="#445" stroke="#667" stroke-width="0.8"/>
+
+                <!-- Main gear (under fuselage center, with twin wheels) -->
+                <line x1="220" y1="90" x2="220" y2="104" stroke="#667" stroke-width="1.5"/>
+                <line x1="220" y1="97" x2="215" y2="104" stroke="#667" stroke-width="1"/>
+                <line x1="220" y1="97" x2="225" y2="104" stroke="#667" stroke-width="1"/>
+                <ellipse cx="214" cy="106" rx="5" ry="3.5" fill="#445" stroke="#667" stroke-width="0.8"/>
+                <ellipse cx="226" cy="106" rx="5" ry="3.5" fill="#445" stroke="#667" stroke-width="0.8"/>
+                <!-- Main gear fairing on fuselage -->
+                <path d="M212,88 Q210,90 212,92 L228,92 Q230,90 228,88"
+                      fill="#c8cdd6" stroke="#8899aa" stroke-width="0.6"/>
+
+                <!-- ═══════════════════════════════════════
+                     CARGO HOLDS (highlighted)
+                     ═══════════════════════════════════════ -->
+
+                <!-- FWD hold zone (between nose gear and wing) -->
+                <rect x="90" y="78" width="62" height="11" rx="3"
+                      fill="#2b7de9" opacity="0.2" stroke="#2b7de9" stroke-width="1.2"/>
+                <!-- AFT hold zone (behind wing/main gear) -->
+                <rect x="250" y="78" width="75" height="11" rx="3"
+                      fill="#7c8a9a" opacity="0.2" stroke="#7c8a9a" stroke-width="1.2"/>
+
+                <!-- Hold door outlines -->
+                <rect x="98" y="79" width="16" height="9" rx="2"
+                      fill="none" stroke="#2b7de9" stroke-width="0.8" stroke-dasharray="2,1.5"/>
+                <rect x="262" y="79" width="16" height="9" rx="2"
+                      fill="none" stroke="#7c8a9a" stroke-width="0.8" stroke-dasharray="2,1.5"/>
+
+                <!-- Suitcase icons -->
+                <rect x="102" y="81" width="5" height="4.5" rx="0.8" fill="#2b7de9" opacity="0.5"/>
+                <line x1="104.5" y1="80" x2="104.5" y2="81" stroke="#2b7de9" stroke-width="0.7"/>
+                <rect x="266" y="81" width="5" height="4.5" rx="0.8" fill="#7c8a9a" opacity="0.5"/>
+                <line x1="268.5" y1="80" x2="268.5" y2="81" stroke="#7c8a9a" stroke-width="0.7"/>
+
+                <!-- Hold labels below fuselage -->
+                <text x="121" y="102" text-anchor="middle"
+                      font-family="-apple-system,sans-serif" font-size="10" font-weight="700"
+                      fill="#2b7de9" letter-spacing="0.5">FWD</text>
+                <text x="287" y="102" text-anchor="middle"
+                      font-family="-apple-system,sans-serif" font-size="10" font-weight="700"
+                      fill="#7c8a9a" letter-spacing="0.5">AFT</text>
+
+                <!-- ═══════════════════════════════════════
+                     DETAILS & LABELS
+                     ═══════════════════════════════════════ -->
+
+                <!-- Ground line -->
+                <line x1="20" y1="111" x2="460" y2="111" stroke="#bcc5d0" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+                <!-- Rear passenger door outline -->
+                <path d="M372,58 L372,86 Q372,88 374,88 L378,88 Q380,88 380,86 L380,58"
+                      fill="none" stroke="#9aa6b4" stroke-width="0.6" stroke-dasharray="1.5,1.5"/>
+
+                <!-- Front passenger door outline -->
+                <path d="M64,58 L64,86 Q64,88 66,88 L70,88 Q72,88 72,86 L72,58"
+                      fill="none" stroke="#9aa6b4" stroke-width="0.6" stroke-dasharray="1.5,1.5"/>
+
+                <!-- Registration on tail -->
+                <text x="404" y="30" text-anchor="middle"
+                      font-family="-apple-system,sans-serif" font-size="7" font-weight="600"
+                      fill="#8899aa" letter-spacing="0.3">ATR</text>
+
+                <!-- Type label -->
+                <text x="240" y="130" text-anchor="middle"
+                      font-family="-apple-system,sans-serif" font-size="11" font-weight="600"
+                      fill="#8899aa" letter-spacing="1">ATR 72-600</text>
+
+                <!-- Antenna on top of fuselage -->
+                <line x1="300" y1="56" x2="300" y2="50" stroke="#99a5b4" stroke-width="0.8"/>
+                <line x1="298" y1="50" x2="302" y2="50" stroke="#99a5b4" stroke-width="0.8"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Baggage Splitter</div>
+
+        <div class="grid2">
+            <div>
+                <label>Total Bags</label>
+                <input type="number" inputmode="numeric" id="totalBags" placeholder="0" oninput="calcBags('bags')">
+            </div>
+            <div>
+                <label>Total Weight</label>
+                <input type="number" inputmode="decimal" id="totalWeight" placeholder="Kg" oninput="calcBags('bags')">
+            </div>
+        </div>
+        <div id="avgWeightDisp" class="avg-display"></div>
+
+        <hr class="divider">
+
+        <label>Option A &mdash; Split by FWD Bag Count</label>
+        <input type="number" inputmode="numeric" id="fwdBagTarget" placeholder="Target bags for FWD" oninput="calcBags('bags')">
+
+        <label>Option B &mdash; Split by FWD Weight</label>
+        <input type="number" inputmode="decimal" id="fwdWeightTarget" placeholder="Target Kg for FWD" oninput="calcBags('weight')">
+
+        <div class="result-row">
+            <div class="result-box fwd">
+                <div class="result-label">FWD HOLD</div>
+                <div id="fwdBagsRes" class="result-val">&ndash;</div>
+                <div id="fwdWeightRes" class="result-sub fwd-col">0 kg</div>
+            </div>
+            <div class="result-box aft">
+                <div class="result-label">AFT HOLD</div>
+                <div id="aftBagsRes" class="result-val">&ndash;</div>
+                <div id="aftWeightRes" class="result-sub aft-col">0 kg</div>
+            </div>
+        </div>
+
+        <button class="btn btn-danger" onclick="clearBags()">CLEAR ALL</button>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- TAB 2: CROSSWIND CALCULATOR                 -->
+<!-- ════════════════════════════════════════════ -->
+<div id="panelWind" class="panel">
+
+    <!-- Runway Quick-Select -->
+    <div class="card">
+        <div class="card-title">Runway</div>
+        <div id="rwyBar" class="rwy-bar"></div>
+        <div id="rwyEditor" class="rwy-editor"></div>
+    </div>
+
+    <!-- Wind Inputs -->
+    <div class="card">
+        <div class="card-title">Crosswind Calculator</div>
+
+        <div class="grid2">
+            <div>
+                <label>RWY Heading</label>
+                <input type="number" inputmode="numeric" id="rwyHdg" placeholder="e.g. 261" oninput="calcWind()">
+            </div>
+            <div>
+                <label>Wind Direction</label>
+                <input type="number" inputmode="numeric" id="windDir" placeholder="e.g. 310" oninput="calcWind()">
+            </div>
+        </div>
+
+        <div class="grid2">
+            <div>
+                <label>Wind Speed (KT)</label>
+                <input type="number" inputmode="numeric" id="windSpd" placeholder="Sustained" oninput="calcWind()">
+            </div>
+            <div>
+                <label>Gust (KT)</label>
+                <input type="number" inputmode="numeric" id="gustSpd" placeholder="Optional" oninput="calcWind()">
+            </div>
+        </div>
+
+        <label>Runway Condition (RCAM)</label>
+        <select id="rwyCond" onchange="calcWind()">
+            <option value="35">6 &mdash; Dry (35 kt)</option>
+            <option value="28">5 &mdash; Wet / Good (28 kt)</option>
+            <option value="22">4 &mdash; Good to Medium (22 kt)</option>
+            <option value="16">3 &mdash; Medium (16 kt)</option>
+            <option value="16">2 &mdash; Medium to Poor (16 kt)</option>
+            <option value="10">1 &mdash; Poor (10 kt)</option>
+        </select>
+
+        <!-- Results -->
+        <div class="result-row">
+            <div class="result-box">
+                <div class="result-label">CROSSWIND</div>
+                <div id="xWindRes" class="result-val">0 KT</div>
+                <div id="xWindGust" class="result-sub" style="color:#c0392b;"></div>
+            </div>
+            <div class="result-box">
+                <div class="result-label" id="windLabel">HEADWIND</div>
+                <div id="hWindRes" class="result-val">0 KT</div>
+                <div id="hWindGust" class="result-sub" style="color:#c0392b;"></div>
+            </div>
+        </div>
+
+        <div id="windStatus" class="status-pill status-pass">WITHIN LIMITS</div>
+
+        <!-- Wind Diagram -->
+        <div class="diagram-wrap">
+            <canvas id="windDiagram" width="520" height="520"></canvas>
+        </div>
+
+        <button class="btn btn-secondary" onclick="clearWind()">CLEAR WIND</button>
+    </div>
+</div>
+
+</div><!-- .content -->
+
+<script>
+/* ══════════════════════════════════════════════
+   TAB SWITCHING
+   ══════════════════════════════════════════════ */
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', (tab === 'bags' ? i === 0 : i === 1));
+    });
+    document.getElementById('panelBags').classList.toggle('active', tab === 'bags');
+    document.getElementById('panelWind').classList.toggle('active', tab === 'wind');
+    if (tab === 'wind') drawWind();
+}
+
+/* ══════════════════════════════════════════════
+   BAGGAGE SPLITTER
+   ══════════════════════════════════════════════ */
+function calcBags(source) {
+    const totalBags = parseFloat(document.getElementById('totalBags').value) || 0;
+    const totalWeight = parseFloat(document.getElementById('totalWeight').value) || 0;
+
+    if (totalBags <= 0) { resetBagResults(); return; }
+
+    const avg = totalWeight / totalBags;
+    document.getElementById('avgWeightDisp').innerText = 'Avg: ' + avg.toFixed(1) + ' kg/bag';
+
+    let fwdBags = 0;
+    if (source === 'bags') {
+        document.getElementById('fwdWeightTarget').value = '';
+        fwdBags = parseFloat(document.getElementById('fwdBagTarget').value) || 0;
+    } else {
+        document.getElementById('fwdBagTarget').value = '';
+        const wt = parseFloat(document.getElementById('fwdWeightTarget').value) || 0;
+        fwdBags = Math.round(wt / avg);
+    }
+
+    fwdBags = Math.max(0, Math.min(fwdBags, totalBags));
+    const aftBags = totalBags - fwdBags;
+    const fwdWeight = fwdBags * avg;
+    const aftWeight = totalWeight - fwdWeight;
+
+    document.getElementById('fwdBagsRes').innerText = fwdBags + ' Bags';
+    document.getElementById('aftBagsRes').innerText = aftBags + ' Bags';
+    document.getElementById('fwdWeightRes').innerText = Math.round(fwdWeight) + ' kg';
+    document.getElementById('aftWeightRes').innerText = Math.round(aftWeight) + ' kg';
+}
+
+function resetBagResults() {
+    document.getElementById('fwdBagsRes').innerHTML = '&ndash;';
+    document.getElementById('aftBagsRes').innerHTML = '&ndash;';
+    document.getElementById('fwdWeightRes').innerText = '0 kg';
+    document.getElementById('aftWeightRes').innerText = '0 kg';
+    document.getElementById('avgWeightDisp').innerText = '';
+}
+
+function clearBags() {
+    ['totalBags','totalWeight','fwdBagTarget','fwdWeightTarget'].forEach(id => document.getElementById(id).value = '');
+    resetBagResults();
+}
+
+/* ══════════════════════════════════════════════
+   RUNWAY QUICK-SELECT
+   ══════════════════════════════════════════════ */
+const DEFAULT_RWYS = [
+    { name: 'EGNS 26', hdg: 261 },
+    { name: 'EGNS 08', hdg: 83 }
+];
+
+function loadRunways() {
+    try {
+        const saved = localStorage.getItem('atr72_runways');
+        if (saved) return JSON.parse(saved);
+    } catch(e) {}
+    return DEFAULT_RWYS.slice();
+}
+function saveRunways(rwys) {
+    try { localStorage.setItem('atr72_runways', JSON.stringify(rwys)); } catch(e) {}
+}
+
+let runways = loadRunways();
+let editorOpen = false;
+let activeRwy = -1;
+
+function renderRwyBar() {
+    const bar = document.getElementById('rwyBar');
+    let html = '';
+    runways.forEach((r, i) => {
+        html += '<button class="rwy-btn' + (activeRwy === i ? ' active' : '') + '" onclick="selectRwy(' + i + ')">'
+              + r.name + ' (' + r.hdg + '&deg;)</button>';
+    });
+    html += '<button class="rwy-btn edit-btn' + (editorOpen ? ' active' : '') + '" onclick="toggleRwyEditor()">'
+          + (editorOpen ? 'Done' : 'Edit') + '</button>';
+    bar.innerHTML = html;
+}
+
+function selectRwy(i) {
+    activeRwy = (activeRwy === i) ? -1 : i;
+    if (activeRwy >= 0) {
+        document.getElementById('rwyHdg').value = runways[i].hdg;
+        calcWind();
+    }
+    renderRwyBar();
+}
+
+function toggleRwyEditor() {
+    editorOpen = !editorOpen;
+    renderRwyBar();
+    renderRwyEditor();
+}
+
+function renderRwyEditor() {
+    const el = document.getElementById('rwyEditor');
+    if (!editorOpen) { el.classList.remove('open'); return; }
+    el.classList.add('open');
+    let html = '';
+    runways.forEach((r, i) => {
+        html += '<div class="rwy-editor-row">'
+              + '<input class="rwy-name" type="text" value="' + r.name + '" placeholder="Name" onchange="updateRwy(' + i + ',this.value,null)">'
+              + '<input class="rwy-hdg" type="number" inputmode="numeric" value="' + r.hdg + '" placeholder="Hdg" onchange="updateRwy(' + i + ',null,this.value)">'
+              + '<button class="rwy-del-btn" onclick="deleteRwy(' + i + ')">&#x2715;</button>'
+              + '</div>';
+    });
+    html += '<button class="rwy-add-btn" onclick="addRwy()">+ Add Runway</button>';
+    el.innerHTML = html;
+}
+
+function updateRwy(i, name, hdg) {
+    if (name !== null) runways[i].name = name;
+    if (hdg !== null) runways[i].hdg = parseInt(hdg) || 0;
+    saveRunways(runways);
+    renderRwyBar();
+}
+
+function deleteRwy(i) {
+    runways.splice(i, 1);
+    if (activeRwy === i) activeRwy = -1;
+    else if (activeRwy > i) activeRwy--;
+    saveRunways(runways);
+    renderRwyBar();
+    renderRwyEditor();
+}
+
+function addRwy() {
+    runways.push({ name: 'RWY', hdg: 0 });
+    saveRunways(runways);
+    renderRwyBar();
+    renderRwyEditor();
+}
+
+/* ══════════════════════════════════════════════
+   CROSSWIND CALCULATOR
+   ══════════════════════════════════════════════ */
+const T_LIMIT = 10;
+const H_LIMIT = 55;
+
+function windComponents(rwy, dir, spd) {
+    let diff = Math.abs(dir - rwy);
+    if (diff > 180) diff = 360 - diff;
+    const rad = diff * (Math.PI / 180);
+
+    /* Determine sign for head/tail: need to know if wind is from ahead or behind */
+    let rawDiff = dir - rwy;
+    if (rawDiff > 180) rawDiff -= 360;
+    if (rawDiff < -180) rawDiff += 360;
+    const radSigned = rawDiff * (Math.PI / 180);
+    const hWind = spd * Math.cos(radSigned);
+
+    return {
+        xWind: Math.abs(spd * Math.sin(rad)),
+        hWind: hWind
+    };
+}
+
+function calcWind() {
+    const rwy = parseFloat(document.getElementById('rwyHdg').value) || 0;
+    const dir = parseFloat(document.getElementById('windDir').value) || 0;
+    const spd = parseFloat(document.getElementById('windSpd').value) || 0;
+    const gust = parseFloat(document.getElementById('gustSpd').value) || 0;
+    const xLimit = parseFloat(document.getElementById('rwyCond').value);
+
+    const sustained = windComponents(rwy, dir, spd);
+    const gustComp = gust > 0 ? windComponents(rwy, dir, gust) : null;
+
+    /* Display sustained */
+    document.getElementById('xWindRes').innerText = Math.round(sustained.xWind) + ' KT';
+    document.getElementById('hWindRes').innerText = Math.round(Math.abs(sustained.hWind)) + ' KT';
+    document.getElementById('windLabel').innerText = sustained.hWind >= 0 ? 'HEADWIND' : 'TAILWIND';
+
+    /* Display gust line */
+    const xGustEl = document.getElementById('xWindGust');
+    const hGustEl = document.getElementById('hWindGust');
+    if (gustComp && gust > spd) {
+        xGustEl.innerText = 'Gust: ' + Math.round(gustComp.xWind) + ' KT';
+        hGustEl.innerText = 'Gust: ' + Math.round(Math.abs(gustComp.hWind)) + ' KT';
+    } else {
+        xGustEl.innerText = '';
+        hGustEl.innerText = '';
+    }
+
+    /* Limit check uses higher value (gust if present) */
+    const checkX = gustComp && gust > spd ? gustComp.xWind : sustained.xWind;
+    const checkH = gustComp && gust > spd ? gustComp.hWind : sustained.hWind;
+
+    const xSafe = checkX <= xLimit;
+    const tSafe = checkH >= -T_LIMIT;
+    const hSafe = checkH <= H_LIMIT;
+
+    const status = document.getElementById('windStatus');
+    if (xSafe && tSafe && hSafe) {
+        status.innerText = 'WITHIN LIMITS';
+        status.className = 'status-pill status-pass';
+    } else {
+        if (!xSafe) status.innerText = 'EXCEEDS CROSSWIND (' + xLimit + ' KT)';
+        else if (!tSafe) status.innerText = 'EXCEEDS TAILWIND (' + T_LIMIT + ' KT)';
+        else status.innerText = 'EXCEEDS HEADWIND (' + H_LIMIT + ' KT)';
+        status.className = 'status-pill status-fail';
+    }
+
+    drawWind();
+}
+
+function clearWind() {
+    ['rwyHdg','windDir','windSpd','gustSpd'].forEach(id => document.getElementById(id).value = '');
+    activeRwy = -1;
+    renderRwyBar();
+    calcWind();
+}
+
+/* ══════════════════════════════════════════════
+   WIND DIAGRAM (Canvas)
+   ══════════════════════════════════════════════ */
+
+/* Runway number from heading: 261° → "26", 83° → "08" */
+function rwyNum(hdg) {
+    const n = Math.round(((hdg % 360) + 360) % 360 / 10) % 36;
+    return n === 0 ? '36' : String(n).padStart(2, '0');
+}
+
+function drawWind() {
+    const canvas = document.getElementById('windDiagram');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const cx = W / 2;
+    const cy = H / 2;
+    const R = (Math.min(W, H) / 2) - 36;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const rwy = parseFloat(document.getElementById('rwyHdg').value) || 0;
+    const dir = parseFloat(document.getElementById('windDir').value) || 0;
+    const spd = parseFloat(document.getElementById('windSpd').value) || 0;
+
+    const rwyRad = (rwy - 90) * Math.PI / 180;
+    const cosR = Math.cos(rwyRad);
+    const sinR = Math.sin(rwyRad);
+    /* Perpendicular unit vector (90° CW) */
+    const pCos = Math.cos(rwyRad + Math.PI / 2);
+    const pSin = Math.sin(rwyRad + Math.PI / 2);
+
+    /* ── Compass ring ── */
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = '#cdd3dc';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    /* ── Tick marks every 10° ── */
+    for (let d = 0; d < 360; d += 10) {
+        const a = (d - 90) * Math.PI / 180;
+        const major = d % 30 === 0;
+        const cardinal = d % 90 === 0;
+        const inner = cardinal ? R - 14 : major ? R - 10 : R - 6;
+        ctx.beginPath();
+        ctx.moveTo(cx + inner * Math.cos(a), cy + inner * Math.sin(a));
+        ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a));
+        ctx.strokeStyle = cardinal ? '#8899aa' : '#c0c8d0';
+        ctx.lineWidth = cardinal ? 2 : 1;
+        ctx.stroke();
+    }
+
+    /* ── Cardinal labels ── */
+    ctx.fillStyle = '#778899';
+    ctx.font = 'bold 20px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    [{t:'N',a:0},{t:'E',a:90},{t:'S',a:180},{t:'W',a:270}].forEach(l => {
+        const a = (l.a - 90) * Math.PI / 180;
+        ctx.fillStyle = l.t === 'N' ? '#c0392b' : '#8899aa';
+        ctx.fillText(l.t, cx + (R + 20) * Math.cos(a), cy + (R + 20) * Math.sin(a));
+    });
+
+    /* ══════════════════════════════════════
+       RUNWAY TARMAC
+       ══════════════════════════════════════ */
+    const rwyHalf = R * 0.82;   /* half-length of runway strip */
+    const rwyW = 28;            /* half-width of tarmac */
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rwyRad);
+
+    /* Tarmac surface */
+    const tarmacGrad = ctx.createLinearGradient(-rwyHalf, 0, rwyHalf, 0);
+    tarmacGrad.addColorStop(0, '#3a3f4a');
+    tarmacGrad.addColorStop(0.5, '#4a5060');
+    tarmacGrad.addColorStop(1, '#3a3f4a');
+    ctx.fillStyle = tarmacGrad;
+    roundRect(ctx, -rwyHalf, -rwyW, rwyHalf * 2, rwyW * 2, 6);
+    ctx.fill();
+
+    /* Edge lines */
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-rwyHalf + 6, -rwyW + 2);
+    ctx.lineTo(rwyHalf - 6, -rwyW + 2);
+    ctx.moveTo(-rwyHalf + 6, rwyW - 2);
+    ctx.lineTo(rwyHalf - 6, rwyW - 2);
+    ctx.stroke();
+
+    /* Centre-line dashes */
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([14, 10]);
+    ctx.beginPath();
+    ctx.moveTo(-rwyHalf + 50, 0);
+    ctx.lineTo(rwyHalf - 50, 0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* ── Threshold markings (approach end = +rwyHalf direction) ── */
+    drawThreshold(ctx, rwyHalf - 12, rwyW);   /* approach end */
+    drawThreshold(ctx, -rwyHalf + 12, rwyW);  /* reciprocal end */
+
+    /* ── Runway numbers ──
+       Runway 26 (hdg 261°): "26" painted at the OPPOSITE end to the heading
+       direction, so approaching pilots see it. rwyRad points toward the
+       heading (west-ish for 261°), so "26" goes at -rwyHalf (east end). */
+    const numApproach = rwyNum(rwy);
+    const numRecip = rwyNum((rwy + 180) % 360);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = 'bold 24px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    /* Approach-end number at -rwyHalf (reads along +x = heading dir) */
+    ctx.save();
+    ctx.translate(-rwyHalf + 38, 0);
+    ctx.fillText(numApproach, 0, 0);
+    ctx.restore();
+
+    /* Reciprocal number at +rwyHalf (reads along -x = reciprocal dir) */
+    ctx.save();
+    ctx.translate(rwyHalf - 38, 0);
+    ctx.rotate(Math.PI);
+    ctx.fillText(numRecip, 0, 0);
+    ctx.restore();
+
+    ctx.restore(); /* un-rotate from runway drawing */
+
+    /* ══════════════════════════════════════
+       AIRPLANE on short final
+       — sits beyond the approach threshold (opposite to heading direction)
+       — points toward the runway (in the heading direction)
+       ══════════════════════════════════════ */
+    const planeDist = rwyHalf + 30;
+    const px = cx - planeDist * cosR;
+    const py = cy - planeDist * sinR;
+
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(rwyRad); /* nose points in heading direction (toward runway) */
+    drawAirplane(ctx, 0.55);
+    ctx.restore();
+
+    /* ══════════════════════════════════════
+       WIND ARROW
+       ══════════════════════════════════════ */
+    if (spd > 0) {
+        const windRad = (dir - 90) * Math.PI / 180;
+        const wCos = Math.cos(windRad);
+        const wSin = Math.sin(windRad);
+
+        /* Arrow starts at compass edge, points inward (wind blows FROM this direction) */
+        const arrowStart = R - 2;
+        const arrowLen = Math.min(R * 0.55, 28 + spd * 1.8);
+        const sx = cx + arrowStart * wCos;
+        const sy = cy + arrowStart * wSin;
+        const ex = sx - arrowLen * wCos;
+        const ey = sy - arrowLen * wSin;
+
+        /* Shaft */
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.strokeStyle = '#e74c3c';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        /* Filled arrowhead */
+        const headLen = 16;
+        const headW = 8;
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex + headLen * wCos + headW * wSin, ey + headLen * wSin - headW * wCos);
+        ctx.lineTo(ex + headLen * wCos - headW * wSin, ey + headLen * wSin + headW * wCos);
+        ctx.closePath();
+        ctx.fillStyle = '#e74c3c';
+        ctx.fill();
+
+        /* Wind speed label near arrow origin */
+        ctx.save();
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 18px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const lblDist = arrowStart + 18;
+        ctx.fillText(Math.round(spd) + '', cx + lblDist * wCos, cy + lblDist * wSin);
+        ctx.restore();
+
+        /* ── Component vectors ── */
+        const comp = windComponents(rwy, dir, spd);
+        const maxVec = R * 0.45;
+        const xLen = Math.min(maxVec, comp.xWind * 2);
+        const hLen = Math.min(maxVec, Math.abs(comp.hWind) * 2);
+
+        /* Determine crosswind side */
+        let rawDiff = dir - rwy;
+        if (rawDiff > 180) rawDiff -= 360;
+        if (rawDiff < -180) rawDiff += 360;
+        const xSign = rawDiff > 0 ? 1 : -1;
+        const perpAngle = rwyRad + (Math.PI / 2) * xSign;
+
+        /* Crosswind component */
+        if (xLen > 4) {
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + xLen * Math.cos(perpAngle), cy + xLen * Math.sin(perpAngle));
+            ctx.strokeStyle = '#e67e22';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([5, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#e67e22';
+            ctx.font = 'bold 16px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(Math.round(comp.xWind) + ' X',
+                cx + (xLen + 20) * Math.cos(perpAngle),
+                cy + (xLen + 20) * Math.sin(perpAngle));
+        }
+
+        /* Headwind / tailwind component */
+        if (hLen > 4) {
+            const hSign = comp.hWind >= 0 ? -1 : 1;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + hLen * cosR * hSign, cy + hLen * sinR * hSign);
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([5, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#27ae60';
+            ctx.font = 'bold 16px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const hLabel = Math.round(Math.abs(comp.hWind)) + (comp.hWind >= 0 ? ' H' : ' T');
+            ctx.fillText(hLabel,
+                cx + (hLen + 22) * cosR * hSign,
+                cy + (hLen + 22) * sinR * hSign);
+        }
+    }
+}
+
+/* ── Helper: rounded rectangle ── */
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+/* ── Helper: threshold stripes ── */
+function drawThreshold(ctx, xPos, rwyW) {
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    const stripes = 4;
+    const stripeW = 3;
+    const gap = (rwyW * 2 - 8) / (stripes * 2 - 1);
+    for (let i = 0; i < stripes; i++) {
+        const sy = -rwyW + 4 + i * gap * 2;
+        ctx.fillRect(xPos - 10, sy, 20, gap);
+    }
+}
+
+/* ── Helper: airplane silhouette ── */
+/* Draws a top-down airplane at origin, pointing right (+x).
+   Scale ~1.0 gives a ~50px long aircraft. */
+function drawAirplane(ctx, scale) {
+    const s = scale;
+    ctx.fillStyle = '#1a2d4a';
+    ctx.strokeStyle = '#1a2d4a';
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    /* Nose */
+    ctx.moveTo(28 * s, 0);
+    /* Right fuselage to wing */
+    ctx.lineTo(10 * s, 3 * s);
+    /* Right wing */
+    ctx.lineTo(6 * s, 3 * s);
+    ctx.lineTo(-2 * s, 28 * s);
+    ctx.lineTo(-8 * s, 28 * s);
+    ctx.lineTo(-4 * s, 3.5 * s);
+    /* Right fuselage aft */
+    ctx.lineTo(-18 * s, 4 * s);
+    /* Right tailplane */
+    ctx.lineTo(-22 * s, 14 * s);
+    ctx.lineTo(-26 * s, 14 * s);
+    ctx.lineTo(-24 * s, 4 * s);
+    /* Tail */
+    ctx.lineTo(-28 * s, 4 * s);
+    ctx.lineTo(-28 * s, -4 * s);
+    /* Left tailplane */
+    ctx.lineTo(-24 * s, -4 * s);
+    ctx.lineTo(-26 * s, -14 * s);
+    ctx.lineTo(-22 * s, -14 * s);
+    ctx.lineTo(-18 * s, -4 * s);
+    /* Left fuselage aft */
+    ctx.lineTo(-4 * s, -3.5 * s);
+    /* Left wing */
+    ctx.lineTo(-8 * s, -28 * s);
+    ctx.lineTo(-2 * s, -28 * s);
+    ctx.lineTo(6 * s, -3 * s);
+    ctx.lineTo(10 * s, -3 * s);
+    ctx.closePath();
+    ctx.fill();
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════ */
+renderRwyBar();
+
+/* ── Service Worker ── */
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>
