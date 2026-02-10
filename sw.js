@@ -2,6 +2,8 @@ const CACHE_NAME = 'atr72-tools-v6';
 const ASSETS = [
   './',
   './index.html',
+  './styles.css',
+  './script.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
