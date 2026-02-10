@@ -1,10 +1,11 @@
-const CACHE_NAME = 'atr72-tools-v5';
+const CACHE_NAME = 'atr72-tools-v6';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './atr-profile.png'
 ];
 
 /* Install — pre-cache all assets */
