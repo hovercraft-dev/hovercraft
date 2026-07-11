@@ -1,16 +1,26 @@
-const CACHE_NAME = 'atr72-tools-v6';
+/* Offline cache: pre-cache the app shell, serve cache-first with a
+   background refresh (stale-while-revalidate). Bump CACHE_NAME on
+   every release so old caches are dropped on activate. */
+const CACHE_NAME = 'atr72-tools-v7';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
-  './script.js',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './atr-profile.png'
+  './src/main.js',
+  './src/lib/wind.js',
+  './src/lib/baggage.js',
+  './src/lib/store.js',
+  './src/ui/theme.js',
+  './src/ui/tabs.js',
+  './src/ui/bags-panel.js',
+  './src/ui/wind-panel.js',
+  './src/ui/diagram.js',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
+  './assets/atr-profile.png'
 ];
 
-/* Install — pre-cache all assets */
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -19,39 +29,29 @@ self.addEventListener('install', event => {
   );
 });
 
-/* Activate — clean old caches */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-      )
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
-/* Fetch — cache-first, fallback to network */
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
     caches.match(event.request).then(cached => {
-      if (cached) {
-        /* Return cached, but also update in background */
-        const fetchPromise = fetch(event.request).then(response => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        }).catch(() => {});
-        return cached;
-      }
-      return fetch(event.request).then(response => {
-        if (response && response.status === 200) {
+      const refresh = fetch(event.request).then(response => {
+        if (response && response.status === 200 && response.type === 'basic') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
       });
-    })
+      /* Serve from cache immediately when available; the refresh
+         updates the cache in the background for next load. */
+      return cached || refresh;
+    }).catch(() => caches.match('./index.html'))
   );
 });

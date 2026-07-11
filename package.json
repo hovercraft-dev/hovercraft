@@ -1,0 +1,11 @@
+{
+  "name": "atr72-flight-tools",
+  "version": "2.0.0",
+  "description": "Baggage splitter and crosswind calculator PWA for the ATR 72-600",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server 8000"
+  }
+}

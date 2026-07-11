@@ -7,58 +7,57 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a1628">
     <title>Hovercraft's ATR 72 Tools</title>
+    <link rel="icon" type="image/png" href="assets/icon-192.png">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<!-- ── Header + Tabs ── -->
-<div class="header">
-    <button id="themeToggle" class="theme-toggle-btn" onclick="toggleDarkMode()">🌙</button>
+<header class="header">
+    <button id="themeToggle" class="theme-toggle-btn" type="button" aria-label="Toggle dark mode">🌙</button>
     <h1>Hovercraft's <span>ATR 72-600 Flight Tools</span></h1>
-    <div class="tabs">
-        <div class="tab active" onclick="switchTab('bags')">Bags</div>
-        <div class="tab" onclick="switchTab('wind')">Wind</div>
-    </div>
-</div>
+    <nav class="tabs" role="tablist" aria-label="Tools">
+        <button id="tabBags" class="tab active" type="button" role="tab"
+                aria-selected="true" aria-controls="panelBags">Bags</button>
+        <button id="tabWind" class="tab" type="button" role="tab"
+                aria-selected="false" aria-controls="panelWind">Wind</button>
+    </nav>
+</header>
 
-<div class="content">
+<main class="content">
 
-<!-- ════════════════════════════════════════════ -->
-<!-- TAB 1: BAGGAGE SPLITTER                     -->
-<!-- ════════════════════════════════════════════ -->
-<div id="panelBags" class="panel active">
+<!-- ── Baggage splitter ── -->
+<section id="panelBags" class="panel active" data-tab="bags" role="tabpanel" aria-labelledby="tabBags">
 
-    <!-- ATR 72 side-profile with cargo holds -->
-    <div class="card" style="padding: 10px 12px 8px;">
+    <div class="card card-artwork">
         <div class="atr-profile">
-            <img src="atr-profile.png" alt="ATR 72-600">
+            <img src="assets/atr-profile.png" alt="ATR 72-600 side profile showing FWD and AFT cargo holds">
         </div>
     </div>
 
     <div class="card">
-        <div class="card-title">Baggage Splitter</div>
+        <h2 class="card-title">Baggage Splitter</h2>
 
         <div class="grid2">
             <div>
-                <label>Total Bags</label>
-                <input type="number" inputmode="numeric" id="totalBags" placeholder="0" oninput="calcBags('bags')">
+                <label for="totalBags">Total Bags</label>
+                <input type="number" inputmode="numeric" id="totalBags" placeholder="0">
             </div>
             <div>
-                <label>Total Weight</label>
-                <input type="number" inputmode="decimal" id="totalWeight" placeholder="Kg" oninput="calcBags('bags')">
+                <label for="totalWeight">Total Weight</label>
+                <input type="number" inputmode="decimal" id="totalWeight" placeholder="Kg">
             </div>
         </div>
         <div id="avgWeightDisp" class="avg-display"></div>
 
         <hr class="divider">
 
-        <label>Option A &mdash; Split by FWD Bag Count</label>
-        <input type="number" inputmode="numeric" id="fwdBagTarget" placeholder="Target bags for FWD" oninput="calcBags('bags')">
+        <label for="fwdBagTarget">Option A &mdash; Split by FWD Bag Count</label>
+        <input type="number" inputmode="numeric" id="fwdBagTarget" placeholder="Target bags for FWD">
 
-        <label>Option B &mdash; Split by FWD Weight</label>
-        <input type="number" inputmode="decimal" id="fwdWeightTarget" placeholder="Target Kg for FWD" oninput="calcBags('weight')">
+        <label for="fwdWeightTarget">Option B &mdash; Split by FWD Weight</label>
+        <input type="number" inputmode="decimal" id="fwdWeightTarget" placeholder="Target Kg for FWD">
 
         <div class="result-row">
             <div class="result-box fwd">
@@ -73,85 +72,72 @@
             </div>
         </div>
 
-        <button class="btn btn-danger" onclick="clearBags()">CLEAR ALL</button>
+        <button id="clearBagsBtn" class="btn btn-danger" type="button">CLEAR ALL</button>
     </div>
-</div>
+</section>
 
-<!-- ════════════════════════════════════════════ -->
-<!-- TAB 2: CROSSWIND CALCULATOR                 -->
-<!-- ════════════════════════════════════════════ -->
-<div id="panelWind" class="panel">
+<!-- ── Crosswind calculator ── -->
+<section id="panelWind" class="panel" data-tab="wind" role="tabpanel" aria-labelledby="tabWind">
 
-    <!-- Runway Quick-Select -->
     <div class="card">
-        <div class="card-title">Runway</div>
+        <h2 class="card-title">Runway</h2>
         <div id="rwyBar" class="rwy-bar"></div>
         <div id="rwyEditor" class="rwy-editor"></div>
     </div>
 
-    <!-- Wind Inputs -->
     <div class="card">
-        <div class="card-title">Crosswind Calculator</div>
+        <h2 class="card-title">Crosswind Calculator</h2>
 
         <div class="grid2">
             <div>
-                <label>RWY Heading</label>
-                <input type="number" inputmode="numeric" id="rwyHdg" placeholder="e.g. 261" oninput="calcWind()">
+                <label for="rwyHdg">RWY Heading</label>
+                <input type="number" inputmode="numeric" id="rwyHdg" placeholder="e.g. 261">
             </div>
             <div>
-                <label>Wind Direction</label>
-                <input type="number" inputmode="numeric" id="windDir" placeholder="e.g. 310" oninput="calcWind()">
+                <label for="windDir">Wind Direction</label>
+                <input type="number" inputmode="numeric" id="windDir" placeholder="e.g. 310">
             </div>
         </div>
 
         <div class="grid2">
             <div>
-                <label>Wind Speed (KT)</label>
-                <input type="number" inputmode="numeric" id="windSpd" placeholder="Sustained" oninput="calcWind()">
+                <label for="windSpd">Wind Speed (KT)</label>
+                <input type="number" inputmode="numeric" id="windSpd" placeholder="Sustained">
             </div>
             <div>
-                <label>Gust (KT)</label>
-                <input type="number" inputmode="numeric" id="gustSpd" placeholder="Optional" oninput="calcWind()">
+                <label for="gustSpd">Gust (KT)</label>
+                <input type="number" inputmode="numeric" id="gustSpd" placeholder="Optional">
             </div>
         </div>
 
-        <label>Runway Condition (RCAM)</label>
-        <select id="rwyCond" onchange="calcWind()">
-            <option value="35">6 &mdash; Dry (35 kt)</option>
-            <option value="28">5 &mdash; Wet / Good (28 kt)</option>
-            <option value="22">4 &mdash; Good to Medium (22 kt)</option>
-            <option value="16">3 &mdash; Medium (16 kt)</option>
-            <option value="16">2 &mdash; Medium to Poor (16 kt)</option>
-            <option value="10">1 &mdash; Poor (10 kt)</option>
-        </select>
+        <label for="rwyCond">Runway Condition (RCAM)</label>
+        <select id="rwyCond"></select>
 
-        <!-- Results -->
         <div class="result-row">
             <div class="result-box">
                 <div class="result-label">CROSSWIND</div>
                 <div id="xWindRes" class="result-val">0 KT</div>
-                <div id="xWindGust" class="result-sub" style="color:#c0392b;"></div>
+                <div id="xWindGust" class="result-sub gust-note"></div>
             </div>
             <div class="result-box">
                 <div class="result-label" id="windLabel">HEADWIND</div>
                 <div id="hWindRes" class="result-val">0 KT</div>
-                <div id="hWindGust" class="result-sub" style="color:#c0392b;"></div>
+                <div id="hWindGust" class="result-sub gust-note"></div>
             </div>
         </div>
 
-        <div id="windStatus" class="status-pill status-pass">WITHIN LIMITS</div>
+        <div id="windStatus" class="status-pill status-pass">WAITING FOR INPUT</div>
 
-        <!-- Wind Diagram -->
         <div class="diagram-wrap">
             <canvas id="windDiagram" width="520" height="520"></canvas>
         </div>
 
-        <button class="btn btn-secondary" onclick="clearWind()">CLEAR WIND</button>
+        <button id="clearWindBtn" class="btn btn-secondary" type="button">CLEAR WIND</button>
     </div>
-</div>
+</section>
 
-</div><!-- .content -->
+</main>
 
-<script src="script.js" defer></script>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

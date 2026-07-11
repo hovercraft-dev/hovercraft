@@ -9,6 +9,18 @@
     --input-focus-bg: #f8fbff;
     --result-box-bg: #f7f8fa;
     --result-box-border: #eaedf1;
+    --gust-note: #c0392b;
+
+    /* Wind diagram palette (read by src/ui/diagram.js) */
+    --dg-ring: #cdd3dc;
+    --dg-tick: #c0c8d0;
+    --dg-tick-major: #8899aa;
+    --dg-label: #8899aa;
+    --dg-north: #c0392b;
+    --dg-plane: #1a2d4a;
+    --dg-wind: #e74c3c;
+    --dg-cross: #e67e22;
+    --dg-head: #27ae60;
 }
 
 .dark-mode {
@@ -22,6 +34,17 @@
     --input-focus-bg: #112240;
     --result-box-bg: #0d1b2e;
     --result-box-border: #2d3748;
+    --gust-note: #ff6b6b;
+
+    --dg-ring: #3d4a5c;
+    --dg-tick: #34404f;
+    --dg-tick-major: #6b7d90;
+    --dg-label: #8ea0b5;
+    --dg-north: #ff6b6b;
+    --dg-plane: #cfd9e6;
+    --dg-wind: #ff6b6b;
+    --dg-cross: #f5a04c;
+    --dg-head: #4cd07d;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -74,6 +97,9 @@ body {
 }
 .tab {
     flex: 1;
+    background: none;
+    border: none;
+    font-family: inherit;
     text-align: center;
     padding: 12px 0;
     font-size: 0.95rem;
@@ -169,6 +195,10 @@ input::placeholder { color: #bbb; }
 }
 
 .divider { border: 0; border-top: 1px solid var(--result-box-border); margin: 18px 0; }
+
+.gust-note { color: var(--gust-note); }
+
+.card-artwork { padding: 10px 12px 8px; }
 
 /* ── Status pill ── */
 .status-pill {
