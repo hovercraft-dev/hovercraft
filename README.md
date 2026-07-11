@@ -13,6 +13,17 @@ Offline-first PWA with two tools for ATR 72-600 line operations:
 > **Disclaimer:** informal aid only. Always refer to the AFM/FCOM and your
 > operator's OM for the authoritative limits and procedures.
 
+## Documentation
+
+- **`STATE.md`** — where the code and branches currently stand, what's
+  deployed where, and how to pick this up outside the environment it was
+  last worked on in.
+- **`ARCHITECTURE.md`** — how the app is organized and why, module by
+  module.
+- **`SPEC.md`** — a prioritized menu of follow-on work, including one
+  outstanding data question worth resolving before anything else (see
+  below).
+
 ## Operational limits used
 
 | Limit | Value |
@@ -30,7 +41,9 @@ When a gust is entered and exceeds the sustained speed, the limit check is
 made against the gust components; the sustained components stay on display
 with the gust values underneath.
 
-The limits live in one place: `src/lib/wind.js`.
+The limits live in one place: `src/lib/wind.js`. Note: RCAM codes 3 and 2
+currently share the same 16 kt figure — carried over unverified from the
+original app. See `SPEC.md` for details before treating it as confirmed.
 
 ## Structure
 
@@ -52,11 +65,14 @@ src/
   ui/               DOM controllers
     wind-panel.js   Calculator + runway quick-select/editor
     bags-panel.js   Baggage splitter
-    diagram.js      Canvas compass/runway/vector drawing
+    diagram.js      Canvas compass/runway/vector drawing + approach animation
     theme.js        Dark mode toggle
     tabs.js         Tab switching
 test/               Unit tests for src/lib (node:test)
 ```
+
+See `ARCHITECTURE.md` for the reasoning behind this structure and how data
+flows through it.
 
 ## Development
 
