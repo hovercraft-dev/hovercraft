@@ -6,7 +6,7 @@ import {
     HEADWIND_LIMIT_KT,
 } from '../lib/wind.js';
 import { loadRunways, saveRunways } from '../lib/store.js';
-import { drawWindDiagram } from './diagram.js';
+import { initDiagram } from './diagram.js';
 
 export function initWindPanel() {
     const el = {
@@ -27,6 +27,7 @@ export function initWindPanel() {
         clearBtn: document.getElementById('clearWindBtn'),
     };
 
+    const diagram = initDiagram(el.canvas);
     let runways = loadRunways();
     let activeRunway = -1;
     let editorOpen = false;
@@ -193,7 +194,7 @@ export function initWindPanel() {
     }
 
     function redraw() {
-        drawWindDiagram(el.canvas, {
+        diagram.update({
             runwayHdg: parseFloat(el.rwyHdg.value) || 0,
             windDir: parseFloat(el.windDir.value) || 0,
             speedKt: parseFloat(el.windSpd.value) || 0,
@@ -221,5 +222,5 @@ export function initWindPanel() {
     renderRunwayBar();
     recalc();
 
-    return { redraw };
+    return { redraw, setActive: diagram.setActive };
 }

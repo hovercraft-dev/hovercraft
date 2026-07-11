@@ -77,6 +77,21 @@ export function assessWind({ runwayHdg, windDir, speedKt, gustKt = 0, crosswindL
     };
 }
 
+/* Typical ATR 72 approach speed; used only to illustrate the crab
+   angle on the wind diagram, never for limit checks. */
+export const APPROACH_SPEED_KT = 115;
+
+/*
+ * Drift (crab) angle in degrees for a given wind, positive when the
+ * nose points right of track (wind from the right).
+ */
+export function driftAngleDeg(runwayHdg, windDir, speedKt, tasKt = APPROACH_SPEED_KT) {
+    const diff = angleDifference(runwayHdg, windDir);
+    const crossSigned = speedKt * Math.sin(diff * (Math.PI / 180));
+    const ratio = Math.max(-1, Math.min(1, crossSigned / tasKt));
+    return Math.asin(ratio) * (180 / Math.PI);
+}
+
 /* Runway designator from a magnetic heading: 261 -> "26", 83 -> "08", 356 -> "36" */
 export function runwayNumber(hdg) {
     const n = Math.round((((hdg % 360) + 360) % 360) / 10) % 36;

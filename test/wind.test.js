@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     angleDifference,
+    driftAngleDeg,
     windComponents,
     checkLimits,
     assessWind,
@@ -102,6 +103,22 @@ test('runwayNumber maps headings to designators', () => {
 test('reciprocalHeading flips 180 degrees', () => {
     assert.equal(reciprocalHeading(261), 81);
     assert.equal(reciprocalHeading(83), 263);
+});
+
+test('driftAngleDeg crabs into wind, positive to the right', () => {
+    /* full crosswind from the right of RWY 26 at 20 kt, Vapp 115 */
+    const right = driftAngleDeg(260, 350, 20);
+    assert.equal(Math.round(right * 10) / 10, 10);
+
+    /* same wind from the left */
+    const left = driftAngleDeg(260, 170, 20);
+    assert.equal(Math.round(left * 10) / 10, -10);
+
+    /* pure headwind: no drift */
+    assert.equal(driftAngleDeg(260, 260, 30), 0);
+
+    /* absurd wind clamps instead of NaN */
+    assert.equal(driftAngleDeg(260, 350, 500), 90);
 });
 
 test('crosswindLimitForCode matches the RCAM table', () => {

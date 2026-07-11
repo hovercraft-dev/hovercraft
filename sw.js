@@ -1,7 +1,7 @@
 /* Offline cache: pre-cache the app shell, serve cache-first with a
    background refresh (stale-while-revalidate). Bump CACHE_NAME on
    every release so old caches are dropped on activate. */
-const CACHE_NAME = 'atr72-tools-v7';
+const CACHE_NAME = 'atr72-tools-v8';
 const ASSETS = [
   './',
   './index.html',

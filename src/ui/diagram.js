@@ -1,28 +1,88 @@
-import { windComponents, runwayNumber, reciprocalHeading } from '../lib/wind.js';
+import { windComponents, driftAngleDeg, runwayNumber, reciprocalHeading } from '../lib/wind.js';
 
 /* All geometry is authored in a fixed 520x520 design space; the canvas
    backing store is scaled to the element's CSS size * devicePixelRatio
    so the diagram stays sharp on any screen. */
 const DESIGN = 520;
 
-/* Colors come from CSS custom properties so the diagram follows the theme. */
+/* Approach animation: one pass down final, from beyond the compass
+   ring to just past the threshold. */
+const APPROACH_PERIOD_MS = 7000;
+const APPROACH_START = 244;  /* distance from centre at the start of final */
+const APPROACH_END = 152;    /* just past the threshold */
+const APPROACH_STATIC = 216; /* parked position when not animating */
+
+/* Colors come from CSS custom properties (instrument palette, same in
+   both themes) so they stay tunable from styles.css. */
 function palette(canvas) {
     const styles = getComputedStyle(canvas);
     const get = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
     return {
-        ring: get('--dg-ring', '#cdd3dc'),
-        tick: get('--dg-tick', '#c0c8d0'),
-        tickMajor: get('--dg-tick-major', '#8899aa'),
-        label: get('--dg-label', '#8899aa'),
-        north: get('--dg-north', '#c0392b'),
-        plane: get('--dg-plane', '#1a2d4a'),
-        wind: get('--dg-wind', '#e74c3c'),
-        cross: get('--dg-cross', '#e67e22'),
-        head: get('--dg-head', '#27ae60'),
+        ring: get('--dg-ring', '#3c5170'),
+        tick: get('--dg-tick', '#2c3d54'),
+        tickMajor: get('--dg-tick-major', '#64809e'),
+        label: get('--dg-label', '#93a7bf'),
+        numeral: get('--dg-numeral', '#64809e'),
+        north: get('--dg-north', '#ff7070'),
+        plane: get('--dg-plane', '#eef3f9'),
+        wind: get('--dg-wind', '#ff6259'),
+        cross: get('--dg-cross', '#ffa94d'),
+        head: get('--dg-head', '#56d178'),
+        approach: get('--dg-approach', 'rgba(238,243,249,0.22)'),
     };
 }
 
-export function drawWindDiagram(canvas, { runwayHdg, windDir, speedKt }) {
+/*
+ * Create the diagram controller for a canvas.
+ *  - update(state) redraws with new wind data
+ *  - setActive(bool) starts/stops the approach animation (run it only
+ *    while the wind panel is visible)
+ * The animation also pauses when the document is hidden and respects
+ * prefers-reduced-motion.
+ */
+export function initDiagram(canvas) {
+    let state = { runwayHdg: 0, windDir: 0, speedKt: 0 };
+    let active = false;
+    let rafId = null;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)') ?? null;
+
+    const animating = () => active && !document.hidden && !reduceMotion?.matches;
+
+    function frame(now) {
+        rafId = null;
+        draw(canvas, state, (now % APPROACH_PERIOD_MS) / APPROACH_PERIOD_MS);
+        if (animating()) rafId = requestAnimationFrame(frame);
+    }
+
+    function sync() {
+        if (animating()) {
+            if (rafId === null) rafId = requestAnimationFrame(frame);
+        } else {
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+            draw(canvas, state, null);
+        }
+    }
+
+    document.addEventListener('visibilitychange', sync);
+    reduceMotion?.addEventListener?.('change', sync);
+
+    return {
+        update(next) {
+            state = next;
+            if (!animating()) draw(canvas, state, null);
+        },
+        setActive(on) {
+            active = on;
+            sync();
+        },
+    };
+}
+
+/* phase: [0,1) animation progress, or null for a static frame */
+function draw(canvas, { runwayHdg, windDir, speedKt }, phase) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -48,20 +108,43 @@ export function drawWindDiagram(canvas, { runwayHdg, windDir, speedKt }) {
     const sinR = Math.sin(rwyRad);
 
     drawCompass(ctx, cx, cy, R, colors);
+    drawApproachTrack(ctx, cx, cy, R, cosR, sinR, colors);
     drawRunway(ctx, cx, cy, R, rwyRad, runwayHdg);
 
-    /* Airplane on short final: beyond the approach threshold, nose toward the runway */
-    const planeDist = R * 0.82 + 30;
-    ctx.save();
-    ctx.translate(cx - planeDist * cosR, cy - planeDist * sinR);
-    ctx.rotate(rwyRad);
-    drawAirplane(ctx, 0.55, colors.plane);
-    ctx.restore();
-
     if (speedKt > 0) {
-        drawWindArrow(ctx, cx, cy, R, windDir, speedKt, colors);
         drawComponentVectors(ctx, cx, cy, R, { runwayHdg, windDir, speedKt, rwyRad, cosR, sinR }, colors);
+        drawWindArrow(ctx, cx, cy, R, windDir, speedKt, colors);
     }
+
+    drawApproachingAircraft(ctx, cx, cy, { runwayHdg, windDir, speedKt, rwyRad, cosR, sinR }, phase, colors);
+}
+
+/* Aircraft on final: tracks the extended centreline, nose crabbed into
+   wind by the actual drift angle at approach speed. */
+function drawApproachingAircraft(ctx, cx, cy, wind, phase, colors) {
+    let dist;
+    let alpha = 1;
+    if (phase === null) {
+        dist = APPROACH_STATIC;
+    } else {
+        dist = APPROACH_START + (APPROACH_END - APPROACH_START) * phase;
+        /* fade in off the ring, fade out over the touchdown zone */
+        alpha = Math.min(1, phase / 0.12) * Math.min(1, (1 - phase) / 0.1);
+    }
+
+    const crabRad = wind.speedKt > 0
+        ? driftAngleDeg(wind.runwayHdg, wind.windDir, wind.speedKt) * (Math.PI / 180)
+        : 0;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx - dist * wind.cosR, cy - dist * wind.sinR);
+    ctx.rotate(wind.rwyRad + crabRad);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetY = 3;
+    drawAirplane(ctx, 0.62, colors.plane);
+    ctx.restore();
 }
 
 function drawCompass(ctx, cx, cy, R, colors) {
@@ -84,14 +167,38 @@ function drawCompass(ctx, cx, cy, R, colors) {
         ctx.stroke();
     }
 
-    ctx.font = 'bold 20px -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+
+    /* compass-rose numerals every 30 degrees (skipping the cardinals) */
+    ctx.font = '600 13px -apple-system, sans-serif';
+    ctx.fillStyle = colors.numeral;
+    for (let d = 30; d < 360; d += 30) {
+        if (d % 90 === 0) continue;
+        const a = (d - 90) * (Math.PI / 180);
+        ctx.fillText(String(d / 10), cx + (R - 27) * Math.cos(a), cy + (R - 27) * Math.sin(a));
+    }
+
+    ctx.font = 'bold 20px -apple-system, sans-serif';
     for (const { t, a } of [{ t: 'N', a: 0 }, { t: 'E', a: 90 }, { t: 'S', a: 180 }, { t: 'W', a: 270 }]) {
         const rad = (a - 90) * (Math.PI / 180);
         ctx.fillStyle = t === 'N' ? colors.north : colors.label;
         ctx.fillText(t, cx + (R + 20) * Math.cos(rad), cy + (R + 20) * Math.sin(rad));
     }
+}
+
+/* Dashed extended centreline on the approach side */
+function drawApproachTrack(ctx, cx, cy, R, cosR, sinR, colors) {
+    const from = R * 0.82; /* threshold */
+    const to = R + 4;
+    ctx.beginPath();
+    ctx.moveTo(cx - from * cosR, cy - from * sinR);
+    ctx.lineTo(cx - to * cosR, cy - to * sinR);
+    ctx.strokeStyle = colors.approach;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3, 9]);
+    ctx.stroke();
+    ctx.setLineDash([]);
 }
 
 function drawRunway(ctx, cx, cy, R, rwyRad, runwayHdg) {
@@ -103,9 +210,9 @@ function drawRunway(ctx, cx, cy, R, rwyRad, runwayHdg) {
     ctx.rotate(rwyRad);
 
     const tarmac = ctx.createLinearGradient(-rwyHalf, 0, rwyHalf, 0);
-    tarmac.addColorStop(0, '#3a3f4a');
-    tarmac.addColorStop(0.5, '#4a5060');
-    tarmac.addColorStop(1, '#3a3f4a');
+    tarmac.addColorStop(0, '#39404d');
+    tarmac.addColorStop(0.5, '#4b5464');
+    tarmac.addColorStop(1, '#39404d');
     ctx.fillStyle = tarmac;
     roundRect(ctx, -rwyHalf, -rwyW, rwyHalf * 2, rwyW * 2, 6);
     ctx.fill();
@@ -132,6 +239,15 @@ function drawRunway(ctx, cx, cy, R, rwyRad, runwayHdg) {
 
     drawThreshold(ctx, rwyHalf - 12, rwyW);
     drawThreshold(ctx, -rwyHalf + 12, rwyW);
+
+    /* Green threshold lights on the approach end */
+    ctx.fillStyle = '#4ade80';
+    for (let i = 0; i < 6; i++) {
+        const y = -rwyW + 4 + i * ((rwyW * 2 - 8) / 5);
+        ctx.beginPath();
+        ctx.arc(-rwyHalf - 5, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     /* Runway numbers: the designator is painted at the end the aircraft
        approaches from, so it reads along the direction of the heading. */
@@ -167,6 +283,10 @@ function drawWindArrow(ctx, cx, cy, R, windDir, speedKt, colors) {
     const ex = sx - arrowLen * wCos;
     const ey = sy - arrowLen * wSin;
 
+    ctx.save();
+    ctx.shadowColor = colors.wind;
+    ctx.shadowBlur = 10;
+
     ctx.beginPath();
     ctx.moveTo(sx, sy);
     ctx.lineTo(ex, ey);
@@ -184,6 +304,7 @@ function drawWindArrow(ctx, cx, cy, R, windDir, speedKt, colors) {
     ctx.closePath();
     ctx.fillStyle = colors.wind;
     ctx.fill();
+    ctx.restore();
 
     ctx.fillStyle = colors.wind;
     ctx.font = 'bold 18px -apple-system, sans-serif';
